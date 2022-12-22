@@ -1,4 +1,6 @@
 from typing import Optional
+
+from koh.src.domain.dto.user.dto import User
 from koh.src.infrastructure.env_config import config
 from koh.src.infrastructure.mongo_db.infraestructure import MongoDBInfrastructure
 
@@ -23,10 +25,13 @@ class UserRepository:
         return data
 
     @classmethod
-    async def get_user_cpf(cls, unique_id: str) -> str:
-        if user_cpf := await cls._find_one(
+    async def get_user(cls, unique_id: str) -> Optional[User]:
+        if user := await cls._find_one(
             query={"unique_id": unique_id},
-            project={"identifier_document.cpf": 1, "_id": 0}
+            project={"identifier_document.cpf": 1, "support.liveness": 1, "_id": 0}
         ):
-            user_cpf = user_cpf.get("identifier_document").get("cpf")
-        return user_cpf
+            cpf = user.get("identifier_document", {}).get("cpf")
+            liveness_required = user.get("support", {}).get("liveness")
+            user = User(cpf=cpf, liveness_required=liveness_required)
+        return user
+

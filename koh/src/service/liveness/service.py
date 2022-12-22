@@ -3,6 +3,8 @@ from datetime import datetime
 
 from jwt import jwk_from_pem, JWT
 
+from koh.src.domain.dto.user.dto import User
+from koh.src.domain.exceptions.service.exceptions import UserNotFound
 from koh.src.repository.files.repository import FileRepository
 from koh.src.repository.cache.repository import CacheRepository
 from koh.src.repository.user.repository import UserRepository
@@ -15,13 +17,16 @@ class Liveness:
 
     @classmethod
     async def validate(cls, selfie: str, unique_id: str) -> bool:
-        future_token = cls._get_token()
-        future_cpf = cls._get_user_cpf(unique_id)
-        cpf, token = await asyncio.gather(future_cpf, future_token)
+        user = await cls._get_user(unique_id)
+        if user.liveness_required is False:
+            return True
+        elif not selfie:
+            return False
+        token = await cls._get_token()
         liveness_approved = await UnicoTransport.request_liveness_validation(
             selfie=selfie,
             token=token,
-            cpf=cpf,
+            cpf=user.cpf,
         )
         return liveness_approved
 
@@ -62,10 +67,8 @@ class Liveness:
         return private_key
 
     @staticmethod
-    async def _get_user_cpf(unique_id: str) -> str:
-        cache_key = ":".join(("unique_id_to_cpf", unique_id))
-        if not (cpf := await CacheRepository.get(cache_key)):
-            cpf = await UserRepository.get_user_cpf(unique_id)
-            ttl = int(config("KOH_UNIQUE_ID_TO_CPF_MAP_TTL"))
-            await CacheRepository.set(cache_key, cpf, ttl=ttl)
-        return cpf
+    async def _get_user(unique_id: str) -> User:
+        user = await UserRepository.get_user(unique_id)
+        if not user:
+            raise UserNotFound()
+        return user
