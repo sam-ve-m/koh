@@ -25,13 +25,11 @@ class UserRepository:
         return data
 
     @classmethod
-    async def get_user(cls, unique_id: str) -> Optional[User]:
+    async def get_user(cls, unique_id: str) -> str:
         if user := await cls._find_one(
             query={"unique_id": unique_id},
-            project={"identifier_document.cpf": 1, "support.liveness": 1, "_id": 0}
+            project={"identifier_document.cpf": 1, "_id": 0}
         ):
-            cpf = user.get("identifier_document", {}).get("cpf")
-            liveness_required = user.get("support", {}).get("liveness") or {}
-            user = User(cpf=cpf, liveness_required=liveness_required)
+            user = user.get("identifier_document", {}).get("cpf")
         return user
 

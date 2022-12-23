@@ -3,7 +3,7 @@ from koh.src.infrastructure.redis.infraestructure import RedisInfrastructure
 
 
 class CacheRepository:
-    prefix = "koh"
+    prefix = "koh-liveness"
 
     @classmethod
     async def set(cls, key: str, value: str, ttl: int):
@@ -14,6 +14,6 @@ class CacheRepository:
     @classmethod
     async def get(cls, key: str) -> Optional[str]:
         redis = RedisInfrastructure.get_redis()
-        key = f"{cls.prefix}{key}"
+        key = ":".join((cls.prefix, key))
         if value := await redis.get(name=key):
             return value.decode()

@@ -1,9 +1,9 @@
+import asyncio
 from datetime import datetime
 
 from etria_logger import Gladsheim
 from jwt import jwk_from_pem, JWT
 
-from koh.src.domain.dto.user.dto import User
 from koh.src.domain.exceptions.service.exceptions import UserNotFound
 from koh.src.repository.files.repository import FileRepository
 from koh.src.repository.cache.repository import CacheRepository
@@ -17,8 +17,7 @@ class Liveness:
 
     @classmethod
     async def validate(cls, unique_id: str, selfie: str, feature: str) -> bool:
-        user = await cls._get_user(unique_id)
-        if user.liveness_required.get(feature) is False:
+        if await cls._is_liveness_required(unique_id, feature) is False:
             Gladsheim.warning(
                 "Liveness validation skipped",
                 unique_id=unique_id,
@@ -27,15 +26,17 @@ class Liveness:
             return True
         elif not selfie:
             return False
-        token = await cls._get_token()
+        future_cpf = cls._get_user(unique_id)
+        future_token = cls._get_token()
+        cpf, token = await asyncio.gather(future_cpf, future_token)
         liveness_approved = await UnicoTransport.request_liveness_validation(
             selfie=selfie,
             token=token,
-            cpf=user.cpf,
+            cpf=cpf,
         )
         return liveness_approved
 
-    cache_key = "liveness:token"
+    cache_key = "token"
 
     @classmethod
     async def _get_token(cls):
@@ -72,8 +73,14 @@ class Liveness:
         return private_key
 
     @staticmethod
-    async def _get_user(unique_id: str) -> User:
+    async def _get_user(unique_id: str) -> str:
         user = await UserRepository.get_user(unique_id)
         if not user:
             raise UserNotFound()
         return user
+
+    @staticmethod
+    async def _is_liveness_required(unique_id: str, feature: str) -> bool:
+        key = ":".join(("bypass", unique_id, feature))
+        by_pass = await CacheRepository.get(key)
+        return not by_pass
