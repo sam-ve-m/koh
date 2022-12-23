@@ -1,6 +1,5 @@
 from typing import Optional
 
-from koh.src.domain.dto.user.dto import User
 from koh.src.infrastructure.env_config import config
 from koh.src.infrastructure.mongo_db.infraestructure import MongoDBInfrastructure
 
