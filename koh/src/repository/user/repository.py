@@ -24,7 +24,7 @@ class UserRepository:
         return data
 
     @classmethod
-    async def get_user(cls, unique_id: str) -> str:
+    async def get_user_cpf(cls, unique_id: str) -> str:
         if user := await cls._find_one(
             query={"unique_id": unique_id},
             project={"identifier_document.cpf": 1, "_id": 0}

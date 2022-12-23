@@ -26,7 +26,7 @@ class Liveness:
             return True
         elif not selfie:
             return False
-        future_cpf = cls._get_user(unique_id)
+        future_cpf = cls._get_user_cpf(unique_id)
         future_token = cls._get_token()
         cpf, token = await asyncio.gather(future_cpf, future_token)
         liveness_approved = await UnicoTransport.request_liveness_validation(
@@ -43,7 +43,7 @@ class Liveness:
         if not (token := await CacheRepository.get(cls.cache_key)):
             jwt = await cls._generate_jwt()
             token = await UnicoTransport.request_new_token(jwt)
-            await CacheRepository.set(cls.cache_key, token, ttl=3000)
+            await CacheRepository.set(cls.cache_key, token, ttl=int(config("KOH_UNICO_TOKEN_TTL")))
         return token
 
     @classmethod
@@ -73,11 +73,11 @@ class Liveness:
         return private_key
 
     @staticmethod
-    async def _get_user(unique_id: str) -> str:
-        user = await UserRepository.get_user(unique_id)
-        if not user:
+    async def _get_user_cpf(unique_id: str) -> str:
+        cpf = await UserRepository.get_user_cpf(unique_id)
+        if not cpf:
             raise UserNotFound()
-        return user
+        return cpf
 
     @staticmethod
     async def _is_liveness_required(unique_id: str, feature: str) -> bool:
