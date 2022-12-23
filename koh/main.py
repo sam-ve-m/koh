@@ -8,9 +8,9 @@ from koh.src.domain.exceptions.exception import KohException
 
 class Koh:
     @staticmethod
-    async def check_face(unique_id: str, face: str) -> Tuple[bool, KohStatus]:
+    async def check_face(unique_id: str, face: str, feature: str) -> Tuple[bool, KohStatus]:
         try:
-            status = await Liveness.validate(face, unique_id)
+            status = await Liveness.validate(unique_id, face, feature)
             return status, KohStatus.SUCCESS
         except KohException as error:
             return False, error.status

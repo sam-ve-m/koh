@@ -1,3 +1,5 @@
+import json
+
 from etria_logger import Gladsheim
 
 from koh.src.domain.exceptions.transport.exceptions import UnmappedUnicoBehaviorError
@@ -11,8 +13,15 @@ class UnicoTransport:
         http_session = HttpInfrastructure.get_client()
         try:
             response = await http_session.post(url, **kwargs)
-            response.raise_for_status()
-            response_json = await response.json()
+            response_text = await response.text()
+            if not response.ok:
+                Gladsheim.error(
+                    message="Not success response received",
+                    response=response_text,
+                    args=kwargs,
+                    url=url,
+                )
+            response_json = json.loads(response_text)
             return response_json
         except Exception as error:
             Gladsheim.error(

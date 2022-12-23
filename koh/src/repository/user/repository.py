@@ -31,7 +31,7 @@ class UserRepository:
             project={"identifier_document.cpf": 1, "support.liveness": 1, "_id": 0}
         ):
             cpf = user.get("identifier_document", {}).get("cpf")
-            liveness_required = user.get("support", {}).get("liveness")
+            liveness_required = user.get("support", {}).get("liveness") or {}
             user = User(cpf=cpf, liveness_required=liveness_required)
         return user
 

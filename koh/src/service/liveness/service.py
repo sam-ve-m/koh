@@ -1,6 +1,6 @@
-import asyncio
 from datetime import datetime
 
+from etria_logger import Gladsheim
 from jwt import jwk_from_pem, JWT
 
 from koh.src.domain.dto.user.dto import User
@@ -16,9 +16,14 @@ class Liveness:
     jwt = JWT()
 
     @classmethod
-    async def validate(cls, selfie: str, unique_id: str) -> bool:
+    async def validate(cls, unique_id: str, selfie: str, feature: str) -> bool:
         user = await cls._get_user(unique_id)
-        if user.liveness_required is False:
+        if user.liveness_required.get(feature) is False:
+            Gladsheim.warning(
+                "Liveness validation skipped",
+                unique_id=unique_id,
+                feature=feature,
+            )
             return True
         elif not selfie:
             return False
