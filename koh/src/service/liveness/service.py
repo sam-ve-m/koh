@@ -82,7 +82,6 @@ class Liveness:
     @staticmethod
     async def _is_liveness_required(unique_id: str, feature: str) -> bool:
         key = ":".join(("bypass", unique_id, feature))
-        if by_pass := await CacheRepository.get(key):
-            by_pass = eval(by_pass)
-        return not by_pass
+        by_pass = await CacheRepository.get(key)
+        return by_pass is not True
 
